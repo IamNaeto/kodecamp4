@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcryptjs';
 import { PrismaService } from '../prisma/prisma.service';
 import { SignupDto } from './dto/signup-user.dto';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Injectable()
 export class AuthService {
@@ -62,5 +63,40 @@ export class AuthService {
         id: existingUser.id,
       }),
     };
+  }
+
+  async updateUser(userId: string, updatePasswordDto: UpdatePasswordDto): Promise<{ message: string }> {
+    const { currentPassword, newPassword } = updatePasswordDto;
+  
+    if (!currentPassword || !newPassword) {
+      throw new BadRequestException(`Current password and new password are required.`);
+    }
+  
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+  
+    if (!user) {
+      throw new BadRequestException(`User not found.`);
+    }
+  
+    console.log('Current password:', currentPassword);
+    console.log('User password from DB:', user.password);
+  
+    const isPasswordValid = await bcrypt.compare(currentPassword, user.password);
+  
+    if (!isPasswordValid) {
+      throw new BadRequestException(`Current password is incorrect.`);
+    }
+  
+    const salt = 10;
+    const newPasswordHash = await bcrypt.hash(newPassword, salt);
+  
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: newPasswordHash },
+    });
+  
+    return { message: 'Password updated successfully.' };
   }
 }

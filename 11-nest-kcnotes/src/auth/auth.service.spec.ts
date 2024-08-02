@@ -126,4 +126,53 @@ describe('AuthService', () => {
       });
     });
   });
+
+  describe('updateUser', () => {
+    const userId = '1';
+    const updatePasswordDto = {
+      currentPassword: 'currentPassword',
+      newPassword: 'newPassword',
+    };
+
+    it('should throw error if currentPassword or newPassword is missing', async () => {
+      await expect(authService.updateUser(userId, { currentPassword: '', newPassword: '' }))
+        .rejects
+        .toThrow(new BadRequestException(`Current password and new password are required.`));
+    });
+
+    it('should throw error if user is not found', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(null);
+
+      await expect(authService.updateUser(userId, updatePasswordDto))
+        .rejects
+        .toThrow(new BadRequestException(`User not found.`));
+    });
+
+    it('should throw error if currentPassword is incorrect', async () => {
+      const userWithIncorrectPassword = {
+        ...existingUser,
+        password: 'incorrectPassword',
+      };
+
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(userWithIncorrectPassword);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => false);
+
+      await expect(authService.updateUser(userId, updatePasswordDto))
+        .rejects
+        .toThrow(new BadRequestException(`Current password is incorrect.`));
+    });
+
+    it('should update the password if currentPassword is correct', async () => {
+      jest.spyOn(prismaService.user, 'findUnique').mockResolvedValue(existingUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+      jest.spyOn(bcrypt, 'hash').mockImplementation(async () => 'newHashedPassword');
+      jest.spyOn(prismaService.user, 'update').mockResolvedValue({
+        ...existingUser,
+        password: 'newHashedPassword',
+      });
+
+      const result = await authService.updateUser(userId, updatePasswordDto);
+      expect(result).toEqual({ message: 'Password updated successfully.' });
+    });
+  });
 });

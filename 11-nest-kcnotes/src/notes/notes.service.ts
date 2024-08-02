@@ -19,7 +19,7 @@ export class NotesService {
     });
     if (existingNote)
       throw new BadRequestException({
-        message: `Note with title '${note.title}' alsready exists.`,
+        message: `Note with title '${note.title}' already exists.`,
       });
     return await this.prisma.note.create({
       data: {

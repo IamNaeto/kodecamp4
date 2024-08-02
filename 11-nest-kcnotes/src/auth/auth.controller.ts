@@ -3,6 +3,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  Patch,
   Post,
   Req,
   UseGuards,
@@ -11,6 +12,7 @@ import { SignupDto } from './dto/signup-user.dto';
 import { AuthService } from './auth.service';
 import { Request } from 'express';
 import { JwtAuthGuard } from './auth.guard';
+import { UpdatePasswordDto } from './dto/update-password.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -40,5 +42,12 @@ export class AuthController {
     return {
       token: null,
     };
+  }
+
+  @Patch('update-password')
+  @UseGuards(JwtAuthGuard)
+  async updatePassword(@Req() req: Request, @Body() updatePasswordDto: UpdatePasswordDto) {
+    const user = (req as any).user;
+    return this.authService.updateUser(user.id, updatePasswordDto);
   }
 }
