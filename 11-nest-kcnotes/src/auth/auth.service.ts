@@ -99,4 +99,21 @@ export class AuthService {
   
     return { message: 'Password updated successfully.' };
   }
+
+  async deleteUser(userId: string): Promise<{ message: string }> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      throw new BadRequestException(`User not found.`);
+    }
+
+    // Deleting the user and cascading delete to related entities (notes)
+    await this.prisma.user.delete({
+      where: { id: userId },
+    });
+
+    return { message: 'User and associated notes deleted successfully.' };
+  }
 }

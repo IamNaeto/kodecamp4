@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   Patch,
@@ -49,5 +50,12 @@ export class AuthController {
   async updatePassword(@Req() req: Request, @Body() updatePasswordDto: UpdatePasswordDto) {
     const user = (req as any).user;
     return this.authService.updateUser(user.id, updatePasswordDto);
+  }
+
+  @Delete('delete')
+  @UseGuards(JwtAuthGuard)
+  async deleteUser(@Req() req: Request): Promise<{ message: string }> {
+    const user = (req as any).user;
+    return this.authService.deleteUser(user.id);
   }
 }

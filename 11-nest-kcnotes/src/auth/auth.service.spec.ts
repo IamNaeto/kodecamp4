@@ -175,4 +175,34 @@ describe('AuthService', () => {
       expect(result).toEqual({ message: 'Password updated successfully.' });
     });
   });
+
+  describe('deleteUser', () => {
+    it('should throw an error if user is not found', async () => {
+      const userId = 'non-existing-user-id';
+    
+      prismaService.user.findUnique = jest.fn().mockResolvedValue(null);
+      prismaService.user.delete = jest.fn();
+    
+      await expect(authService.deleteUser(userId)).rejects.toThrow(BadRequestException);
+    
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
+    
+      expect(prismaService.user.delete).not.toHaveBeenCalled();
+    });
+    
+  
+    it('should delete the user and associated entities successfully', async () => {
+      const userId = 'existing-user-id';
+  
+      prismaService.user.findUnique = jest.fn().mockResolvedValue({ id: userId });
+      prismaService.user.delete = jest.fn().mockResolvedValue({ id: userId });
+  
+      const result = await authService.deleteUser(userId);
+      expect(prismaService.user.findUnique).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(prismaService.user.delete).toHaveBeenCalledWith({ where: { id: userId } });
+  
+      expect(result).toEqual({ message: 'User and associated notes deleted successfully.' });
+    });
+  });
+  
 });
